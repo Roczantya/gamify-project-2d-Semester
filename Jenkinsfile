@@ -44,15 +44,15 @@ pipeline {
 
 
         stage('Config - Ansible') {
-        steps {
-            echo "Menunggu LXC booting..."
-            sleep 30 // Kasih waktu 30 detik biar SSH-nya nyala
-            sh '''
-                export ANSIBLE_HOST_KEY_CHECKING=False
-                ansible-playbook -i inventory.ini playbook.yml
-            '''
-        }
+    steps {
+        echo "Menunggu LXC benar-benar siap (60 detik)..."
+        sleep 60 
+        sh '''
+            export ANSIBLE_HOST_KEY_CHECKING=False
+            ansible-playbook -i inventory.ini playbook.yml
+        '''
     }
+}
 
         stage('Build & Deploy (Docker)') {
             steps {
