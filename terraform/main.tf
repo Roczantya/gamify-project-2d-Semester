@@ -21,7 +21,6 @@ resource "proxmox_lxc" "homelab_container" {
   network {
     name   = "eth0"
     bridge = "vmbr0"
-    ip     = "192.168.1.16/24"
-    gw     = "192.168.1.1"
+    ip     = dhcp
   }# Bisa diatur statis jika diperlukan
 }

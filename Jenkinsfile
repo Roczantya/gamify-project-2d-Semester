@@ -50,7 +50,10 @@ pipeline {
                     /* Pastikan inventory.ini sudah ada IP-nya.
                        Jika pakai SSH key, pastikan private key-nya terbaca oleh Jenkins.
                     */
-                    sh 'ansible-playbook -i inventory.ini playbook.yml'
+                    sh '''
+                        export ANSIBLE_HOST_KEY_CHECKING=False
+                        ansible-playbook -i inventory.ini playbook.yml
+                    '''
                 }
             }
         }
