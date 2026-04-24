@@ -18,11 +18,9 @@ variable "target_node" {
 }
 
 variable "container_count" {
-  default = 3
+  default = 1
 }
 
-variable "ssh_key_path" {
-  description = "Lokasi file public key di komputer lokal"
-  type        = string
-  default     = "C:/Users/TiffanyLA/.ssh/id_rsa.pub"
+variable "ssh_public_key" {
+  type = string
 }

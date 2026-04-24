@@ -6,7 +6,6 @@ resource "proxmox_lxc" "homelab_container" {
   hostname     = "ubuntu-lab-${count.index + 1}" # Nama akan jadi ubuntu-lab-1, ubuntu-lab-2, dst.
   vmid         = 200 + count.index              # ID akan mulai dari 150, 151, dst.
   ostemplate   = "local:vztmpl/ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
-  ssh_public_keys = file(var.ssh_key_path)  
   unprivileged = true
   start        = true
 
