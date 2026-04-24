@@ -6,7 +6,7 @@ sleep 30 # MySQL butuh waktu buat "siap-siap"
 # Ganti ke 8082 karena 8080 punyanya si Jenkins
 # Ganti localhost dengan IP Host/LXC kamu
 # Tambahkan /login.html di belakang IP
-status=$(curl -s -o /dev/null -w "%{http_code}" http://192.168.1.16:8082/login.html)
+status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8082/login.html)
 if [ $status -eq 200 ]; then
   echo "SUCCESS: App is rendering (HTTP 200)"
   exit 0
