@@ -2,13 +2,23 @@ pipeline {
     agent any
 
     environment {
-        TF_VAR_pm_api_url          = "https://100.121.8.48:8006/api2/json"
+
+        /* BAGIAN KEAMANAN (5 STARS):
+           Menyambungkan Jenkins Credentials ke Terraform Variables.
+           Nama di dalam credentials('...') harus sama dengan ID yang kamu buat di Jenkins UI.
+
+        */
+        TF_VAR_pm_api_url          = "https://100.121.8.48:8006/api2/json" // Ganti dengan IP Proxmox-mu
         TF_VAR_pm_api_token_id     = credentials('Proxmox_user_token')
         TF_VAR_pm_api_token_secret = credentials('Proxmox_user_token2')
         TF_VAR_target_node         = "fanyla"
-        TF_VAR_ssh_public_key      = credentials('sshpub')
-        ANSIBLE_HOST_KEY_CHECKING   = 'False'
+        TF_VAR_ssh_public_key = credentials('sshpub')
+        // Mematikan pengecekan SSH key agar Ansible tidak berhenti minta konfirmasi
+        ANSIBLE_HOST_KEY_CHECKING = 'False'
+
     }
+
+
 
     stages {
         stage('Checkout SCM') {
@@ -18,47 +28,51 @@ pipeline {
             }
         }
 
+
+
         stage('Infrastructure (Terraform)') {
             steps {
                 dir('terraform') {
                     echo 'Memulai Provisioning LXC di Proxmox...'
                     sh 'terraform init'
+                    // Terraform otomatis membaca variabel TF_VAR_ di atas
                     sh 'terraform apply -auto-approve'
                 }
             }
         }
 
+
+
         stage('Configuration (Ansible)') {
             steps {
                 dir('ansible') {
                     echo 'Mengonfigurasi LXC: Install Docker & Docker Compose...'
-                    // Gunakan sshagent supaya Ansible punya kunci buat masuk ke LXC
-                    sshagent(credentials: ['SSH_LXC_KEY']) { 
-                        sh 'ansible-playbook -i inventory.ini playbook.yml'
-                    }
+                    /* Pastikan inventory.ini sudah ada IP-nya.
+                       Jika pakai SSH key, pastikan private key-nya terbaca oleh Jenkins.
+                    */
+                    sh 'ansible-playbook -i inventory.ini playbook.yml'
                 }
             }
         }
 
         stage('Build & Deploy (Docker)') {
             steps {
-                script {
-                    echo 'Membangun Image & Menjalankan Container...'
-                    /* TIPS: Jika folder backend/frontend kamu ada di dalam folder tertentu, 
-                       gunakan dir('nama_foldernya') { ... } di sini.
-                    */
-                    sh 'docker-compose up -d --build'
-                }
+                echo 'Membangun Image & Menjalankan Container...'
+                // Menjalankan docker-compose untuk App (Backend + Frontend) & MongoDB
+                sh 'docker-compose up -d --build'
             }
         }
 
         stage('Smoke Test') {
             steps {
                 echo 'Melakukan Verifikasi Aplikasi...'
+                // Menjalankan script test.sh untuk memastikan aplikasi tidak crash
                 sh 'bash test.sh'
             }
         }
     }
+
+
 
     post {
         success {
@@ -66,6 +80,7 @@ pipeline {
             echo 'HORE! PIPELINE BERHASIL & APLIKASI JALAN!'
             echo '============================================='
         }
+
         failure {
             echo '============================================='
             echo 'WADUH GAGAL! Melakukan Auto-Destroy agar Proxmox tetap bersih...'
@@ -75,5 +90,7 @@ pipeline {
                 sh 'terraform destroy -auto-approve'
             }
         }
+
     }
+
 }
