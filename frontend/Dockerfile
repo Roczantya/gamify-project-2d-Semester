@@ -1,4 +1,6 @@
 FROM nginx:alpine
-# Copy semua isi folder frontend ke direktori default Nginx
-COPY . /usr/share/nginx/html
+
+# Copy 'isi' dari folder html ke folder tujuan Nginx
+COPY html/ /usr/share/nginx/html/
+
 EXPOSE 80
