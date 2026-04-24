@@ -8,6 +8,7 @@ resource "proxmox_lxc" "homelab_container" {
   ostemplate   = "local:vztmpl/ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
   unprivileged = true
   start        = true
+  ssh_public_keys = var.ssh_public_keys
 
   # Spesifikasi Resource
   cores  = 1
