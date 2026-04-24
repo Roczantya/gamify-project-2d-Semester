@@ -1,5 +1,5 @@
-# Stage 1: Build jar dengan Maven
-FROM maven:3.8.4-openjdk-17 AS build
+# Stage 1: Build jar dengan Maven (Ganti ke Temurin agar tidak Error Not Found)
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY . .
 RUN mvn clean package -DskipTests
