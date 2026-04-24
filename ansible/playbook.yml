@@ -1,14 +1,36 @@
 ---
-- name: Setup Docker Environment
-  hosts: all
+- name: Prepare LXC for Gamify App
+  hosts: lxc_servers
   become: yes
   tasks:
-    - name: Install Docker
+    - name: Update apt cache
       apt:
-        name: [docker.io, docker-compose]
-        state: present
         update_cache: yes
-    - name: Ensure Docker is running
+        force_apt_get: yes
+
+    - name: Install required system packages
+      apt:
+        pkg:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - python3-pip
+          - virtualenv
+          - python3-setuptools
+        state: latest
+
+    - name: Install Docker Engine
+      shell: "curl -fsSL https://get.docker.com | sh"
+
+    - name: Ensure Docker service is running
       service:
         name: docker
         state: started
+        enabled: yes
+
+    - name: Install Docker Compose
+      get_url:
+        url: https://github.com/docker/compose/releases/download/v2.24.1/docker-compose-linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
