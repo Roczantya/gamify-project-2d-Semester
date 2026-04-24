@@ -12,7 +12,7 @@ pipeline {
         TF_VAR_pm_api_token_id     = credentials('Proxmox_user_token')
         TF_VAR_pm_api_token_secret = credentials('Proxmox_user_token2')
         TF_VAR_target_node         = "fanyla"
-        TF_VAR_ssh_public_key = credentials('sshpub')
+        TF_VAR_ssh_public_key = credentials('SSH_key')
         // Mematikan pengecekan SSH key agar Ansible tidak berhenti minta konfirmasi
         ANSIBLE_HOST_KEY_CHECKING = 'False'
 

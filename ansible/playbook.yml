@@ -3,6 +3,12 @@
   hosts: lxc_servers
   become: yes
   tasks:
+    - name: Wait for SSH to be ready
+      wait_for:
+        host: "{{ inventory_hostname }}"
+        port: 22
+        delay: 5
+        timeout: 300
     - name: "Update apt repository cache"
       apt:
         update_cache: yes
@@ -18,11 +24,24 @@
           - python3-pip
         state: present
 
-    - name: "Install Docker Engine via Official Script"
-      shell: "curl -fsSL https://get.docker.com | sh"
-      args:
-        creates: /usr/bin/docker
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
 
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: Install Docker packages
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+        update_cache: yes
     - name: "Ensure Docker service is started and enabled"
       service:
         name: docker
