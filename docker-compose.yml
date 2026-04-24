@@ -6,10 +6,8 @@ services:
   ports:
     - "3306:3306"
   environment:
-    MYSQL_ROOT_PASSWORD: root
+    MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
     MYSQL_DATABASE: gamify
-    MYSQL_USER: user
-    MYSQL_PASSWORD: password
 
   item-app-backend:
     build: ./backend
