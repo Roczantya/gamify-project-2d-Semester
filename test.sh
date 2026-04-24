@@ -4,7 +4,8 @@ echo "Testing Gamify App..."
 sleep 20 
 
 # Ganti ke 8082 karena 8080 punyanya si Jenkins
-status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8082)
+# Ganti localhost dengan IP Host/LXC kamu
+status=$(curl -s -o /dev/null -w "%{http_code}" http://100.121.8.48:8082)
 
 if [ $status -eq 200 ]; then
   echo "SUCCESS: App is rendering (HTTP 200)"
