@@ -43,20 +43,16 @@ pipeline {
 
 
 
-        stage('Configuration (Ansible)') {
-            steps {
-                dir('ansible') {
-                    echo 'Mengonfigurasi LXC: Install Docker & Docker Compose...'
-                    /* Pastikan inventory.ini sudah ada IP-nya.
-                       Jika pakai SSH key, pastikan private key-nya terbaca oleh Jenkins.
-                    */
-                    sh '''
-                        export ANSIBLE_HOST_KEY_CHECKING=False
-                        ansible-playbook -i inventory.ini playbook.yml
-                    '''
-                }
-            }
+        stage('Config - Ansible') {
+        steps {
+            echo "Menunggu LXC booting..."
+            sleep 30 // Kasih waktu 30 detik biar SSH-nya nyala
+            sh '''
+                export ANSIBLE_HOST_KEY_CHECKING=False
+                ansible-playbook -i inventory.ini playbook.yml
+            '''
         }
+    }
 
         stage('Build & Deploy (Docker)') {
             steps {
