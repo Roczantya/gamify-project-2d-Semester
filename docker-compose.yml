@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  item-db:
+    image: mongo:3.6
+    container_name: item-db
+    ports:
+      - "27017:27017"
+
+  item-app-backend:
+    build: ./backend
+    container_name: item-app-backend
+    ports:
+      - "8081:8080"
+    depends_on:
+      - item-db
+    environment:
+      - MONGO_URL=mongodb://item-db:27017/gamify
+
+  item-app-frontend:
+    build: ./frontend
+    container_name: item-app-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - item-app-backend
