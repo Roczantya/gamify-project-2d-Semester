@@ -46,7 +46,7 @@ pipeline {
         stage('Config - Ansible') {
     steps {
         echo "Menunggu LXC benar-benar siap (60 detik)..."
-        sleep 60 
+        sleep 40 
         sh '''
             export ANSIBLE_HOST_KEY_CHECKING=False
             cd ansible && ansible-playbook -i inventory.ini playbook.yml        
