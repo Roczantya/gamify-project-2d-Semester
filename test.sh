@@ -3,6 +3,9 @@ echo "Testing Gamify App..."
 # Tunggu 20 detik biar makin aman, Java/Nginx butuh waktu buat 'bangun'
 sleep 30 # MySQL butuh waktu buat "siap-siap"
 
+HOST_IP=$(/sbin/ip route | awk '/default/ { print $3 }')
+echo "Detected Host IP: $HOST_IP"
+
 # Ganti ke 8082 karena 8080 punyanya si Jenkins
 # Ganti localhost dengan IP Host/LXC kamu
 # Tambahkan /login.html di belakang IP
