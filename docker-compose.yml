@@ -1,10 +1,15 @@
 version: '3.8'
 services:
   item-db:
-    image: mongo:3.6
-    container_name: item-db
-    ports:
-      - "27017:27017"
+  image: mysql:5.7
+  container_name: item-db
+  ports:
+    - "3306:3306"
+  environment:
+    MYSQL_ROOT_PASSWORD: root
+    MYSQL_DATABASE: gamify
+    MYSQL_USER: user
+    MYSQL_PASSWORD: password
 
   item-app-backend:
     build: ./backend
