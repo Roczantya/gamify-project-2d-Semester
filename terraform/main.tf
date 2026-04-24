@@ -4,7 +4,7 @@ resource "proxmox_lxc" "homelab_container" {
 
   target_node  = var.target_node
   hostname     = "ubuntu-lab-${count.index + 1}" # Nama akan jadi ubuntu-lab-1, ubuntu-lab-2, dst.
-  vmid         = 200 + count.index              # ID akan mulai dari 150, 151, dst.
+  vmid         = 204 + count.index              # ID akan mulai dari 150, 151, dst.
   ostemplate   = "local:vztmpl/ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
   unprivileged = true
   start        = true

@@ -1,14 +1,14 @@
 ---
-- name: Prepare LXC for Gamify App
+- name: "Provisioning Docker Environment on Proxmox LXC"
   hosts: lxc_servers
   become: yes
   tasks:
-    - name: Update apt cache
+    - name: "Update apt repository cache"
       apt:
         update_cache: yes
-        force_apt_get: yes
+        cache_valid_time: 3600
 
-    - name: Install required system packages
+    - name: "Install required system packages"
       apt:
         pkg:
           - apt-transport-https
@@ -16,21 +16,21 @@
           - curl
           - software-properties-common
           - python3-pip
-          - virtualenv
-          - python3-setuptools
-        state: latest
+        state: present
 
-    - name: Install Docker Engine
+    - name: "Install Docker Engine via Official Script"
       shell: "curl -fsSL https://get.docker.com | sh"
+      args:
+        creates: /usr/bin/docker
 
-    - name: Ensure Docker service is running
+    - name: "Ensure Docker service is started and enabled"
       service:
         name: docker
         state: started
         enabled: yes
 
-    - name: Install Docker Compose
+    - name: "Install Docker Compose Standalone"
       get_url:
-        url: https://github.com/docker/compose/releases/download/v2.24.1/docker-compose-linux-x86_64
+        url: https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
         dest: /usr/local/bin/docker-compose
         mode: '0755'
