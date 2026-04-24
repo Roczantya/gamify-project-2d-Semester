@@ -40,19 +40,23 @@ pipeline {
                 }
             }
         }
-
-
-
+        
         stage('Config - Ansible') {
-    steps {
-        echo "Menunggu LXC benar-benar siap (60 detik)..."
-        sleep 40 
-        sh '''
-            export ANSIBLE_HOST_KEY_CHECKING=False
-            cd ansible && ansible-playbook -i inventory.ini playbook.yml        
-            '''
-    }
-}
+            steps {
+                echo "Menunggu LXC benar-benar siap (60 detik)..."
+                sleep 60 
+                sh '''
+                    # 1. Hapus sidik jari lama IP 192.168.1.16 agar tidak bentrok (Man-in-the-middle protection)
+                    ssh-keygen -f "/root/.ssh/known_hosts" -R "192.168.1.16" || true
+                    
+                    # 2. Matikan pengecekan host key untuk sesi ini
+                    export ANSIBLE_HOST_KEY_CHECKING=False
+                    
+                    # 3. Masuk ke folder ansible dan jalankan playbook
+                    cd ansible && ansible-playbook -i inventory.ini playbook.yml
+                '''
+            }
+        }
 
         stage('Build & Deploy (Docker)') {
             steps {
