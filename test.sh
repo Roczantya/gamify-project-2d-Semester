@@ -1,7 +1,7 @@
 #!/bin/bash
 echo "Testing Gamify App..."
 # Tunggu 20 detik biar makin aman, Java/Nginx butuh waktu buat 'bangun'
-sleep 10
+sleep 30 # MySQL butuh waktu buat "siap-siap"
 
 # Ganti ke 8082 karena 8080 punyanya si Jenkins
 # Ganti localhost dengan IP Host/LXC kamu

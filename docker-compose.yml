@@ -1,28 +1,35 @@
 version: '3.8'
 services:
   item-db:
-  image: mysql:5.7
-  container_name: item-db
-  ports:
-    - "3306:3306"
-  environment:
-    MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-    MYSQL_DATABASE: gamify
+    image: mysql:5.7
+    container_name: item-db
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes  # <--- Ini kuncinya buat "No Password"
+      - MYSQL_DATABASE=gamify
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
   item-app-backend:
     build: ./backend
     container_name: item-app-backend
     ports:
-      - "8081:8080" # Backend aman di 8081
+      - "8081:8080"
     depends_on:
-      - item-db
+      item-db:
+        condition: service_healthy
     environment:
-      - MONGO_URL=mongodb://item-db:27017/gamify
+      - SPRING_DATASOURCE_URL=jdbc:mysql://item-db:3306/gamify?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=     # Kosongkan saja kalau memang tidak ada
 
   item-app-frontend:
     build: ./frontend
     container_name: item-app-frontend
     ports:
-      - "8082:80"   # <--- UBAH INI (Tadinya 8080)
+      - "8082:80"
     depends_on:
       - item-app-backend
