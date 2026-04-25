@@ -4,12 +4,12 @@ FROM nginx:alpine
 FROM nginx:alpine
 
 # 1. Copy folder-folder pendukung (css, js, images) ke root nginx
-COPY ./frontend/css /usr/share/nginx/html/css
-COPY ./frontend/js /usr/share/nginx/html/js
-COPY ./frontend/images /usr/share/nginx/html/images
+COPY ./css /usr/share/nginx/html/css
+COPY ./js /usr/share/nginx/html/js
+COPY ./images /usr/share/nginx/html/images
 
 # 2. Copy ISI dari folder html langsung ke root nginx (bukan foldernya)
 # Perhatikan tanda "/." di akhir, itu artinya copy isinya saja
-COPY ./frontend/html/. /usr/share/nginx/html/
+COPY ./html/. /usr/share/nginx/html/
 
 EXPOSE 80
