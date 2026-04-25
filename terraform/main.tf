@@ -12,7 +12,7 @@ resource "proxmox_lxc" "homelab_container" {
 
   # Spesifikasi Resource
   cores  = 1
-  memory = 512 # Dalam MB
+  memory = 2048 # Dalam MB
 
   features {
     nesting = true
@@ -20,7 +20,7 @@ resource "proxmox_lxc" "homelab_container" {
   }
   rootfs {
     storage = "local-lvm"
-    size    = "8G"
+    size    = "15G"
   }
 
   network {

@@ -2,25 +2,26 @@ pipeline {
     agent any
 
     environment {
-        // --- CREDENTIALS ---
+        // 1. PUSAT KONTROL IP (Ganti di sini aja kalau mau pindah alamat)
+        LXC_IP                     = "192.168.1.16"
+        
         TF_VAR_pm_api_url          = "https://100.121.8.48:8006/api2/json"
         TF_VAR_pm_api_token_id     = credentials('Proxmox_user_token')
         TF_VAR_pm_api_token_secret = credentials('Proxmox_user_token2')
         TF_VAR_target_node         = "fanyla"
-        
-        // Gembok untuk Terraform (Secret Text)
         TF_VAR_ssh_public_key      = credentials('sshpub')
         
-        // ID Kunci Private untuk Ansible & SSH (SSH Username with private key)
-        SSH_KEY_ID                 = 'SSH_Private_Key' // Ganti dengan ID kredensial SSH kamu di Jenkin
-        
+        SSH_KEY_ID                 = 'SSH_Private_Key' 
         ANSIBLE_HOST_KEY_CHECKING  = 'False'
+        
+        // 2. TAMBAHAN TIMEOUT (Biar gak gampang putus asa pas download)
+        DOCKER_CLIENT_TIMEOUT      = '300'
+        COMPOSE_HTTP_TIMEOUT       = '300'
     }
 
     stages {
         stage('Checkout SCM') {
             steps {
-                echo 'Tarik kode terbaru dari GitHub...'
                 checkout scm
             }
         }
@@ -28,7 +29,6 @@ pipeline {
         stage('Infrastructure - Terraform') {
             steps {
                 dir('terraform') {
-                    echo 'Memulai Provisioning LXC di Proxmox...'
                     sh 'terraform init'
                     sh 'terraform apply -auto-approve'
                 }
@@ -37,13 +37,14 @@ pipeline {
         
         stage('Config - Ansible') {
             steps {
-                echo "Menunggu LXC siap (40 detik)..."
+                echo "Menunggu LXC siap..."
                 sleep 65
                 sshagent(["${env.SSH_KEY_ID}"]) {
-                    sh '''
-                        ssh-keygen -f "$HOME/.ssh/known_hosts" -R "192.168.1.16" || true
+                    // Pakai kutip tiga ganda (""") biar variabel ${LXC_IP} kebaca
+                    sh """
+                        ssh-keygen -f "\$HOME/.ssh/known_hosts" -R "${env.LXC_IP}" || true
                         cd ansible && ansible-playbook -i inventory.ini playbook.yml
-                    '''
+                    """
                 }
             }
         }
@@ -52,30 +53,23 @@ pipeline {
             steps {
                 echo 'Mengirim kode & Menjalankan Docker...'
                 sshagent(["${env.SSH_KEY_ID}"]) {
-                    sh '''
-                        # 1. Buat folder di target
-                        ssh -o StrictHostKeyChecking=no root@192.168.1.16 "mkdir -p /root/app"
-                        
-                        # 2. Kirim semua isi folder saat ini ke target
-                        # Kita pakai -r (recursive) dan pastikan path-nya benar
-                        scp -o StrictHostKeyChecking=no -r ./* root@192.168.1.16:/root/app/
-                        
-                        # 3. Baru jalankan docker-compose
-                        ssh -o StrictHostKeyChecking=no root@192.168.1.16 "cd /root/app && docker-compose up -d --build"
-                    '''
+                    sh """
+                        ssh -o StrictHostKeyChecking=no root@${env.LXC_IP} "mkdir -p /root/app"
+                        scp -o StrictHostKeyChecking=no -r ./* root@${env.LXC_IP}:/root/app/
+                        ssh -o StrictHostKeyChecking=no root@${env.LXC_IP} "cd /root/app && docker-compose up -d --build"
+                    """
                 }
             }
         }
 
         stage('Smoke Test') {
             steps {
-                echo 'Melakukan Verifikasi Aplikasi dengan test.sh...'
-                // Jika test.sh ada di repo GitHub (di root folder)
-                // Dan script tersebut akan mengetes IP 192.168.1.16
-                sh 'bash test.sh' 
+                echo "Melakukan Verifikasi di ${env.LXC_IP}..."
+                // Panggil script test dengan argumen IP
+                sh "bash test.sh ${env.LXC_IP}" 
             }
         }
-    } // Akhir blok STAGES
+    }
 
     post {
         success {
@@ -85,11 +79,10 @@ pipeline {
         }
         failure {
             echo '============================================='
-            echo 'WADUH GAGAL! Menghancurkan LXC agar bersih...'
+            echo 'WADUH GAGAL!'
             echo '============================================='
-            dir('terraform') {
-                sh 'terraform destroy -auto-approve'
-            }
+            // TIPS: Matikan sementara terraform destroy kalau mau debug log error di dalam LXC
+            // dir('terraform') { sh 'terraform destroy -auto-approve' }
         }
     }
 }
