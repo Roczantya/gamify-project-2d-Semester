@@ -63,7 +63,7 @@ pipeline {
                     sh """
                         ssh -o StrictHostKeyChecking=no root@${env.LXC_IP} "mkdir -p /root/app"
                         scp -o StrictHostKeyChecking=no -r ./* root@${env.LXC_IP}:/root/app/
-                        ssh -o StrictHostKeyChecking=no root@${env.LXC_IP} "cd /root/app && docker-compose up -d --build"
+                        ssh -o StrictHostKeyChecking=no root@${env.LXC_IP} "cd /root/app && docker compose up -d --build"
                     """
                 }
             }

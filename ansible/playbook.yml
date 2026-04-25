@@ -63,8 +63,3 @@
             "storage-driver": "vfs"
           }
         mode: '0644'
-    - name: "Install Docker Compose Standalone (Optional for Legacy Support)"
-      get_url:
-        url: https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
-        dest: /usr/local/bin/docker-compose
-        mode: '0755'
