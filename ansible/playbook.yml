@@ -40,6 +40,8 @@
           - docker-ce
           - docker-ce-cli
           - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
         state: present
         update_cache: yes
     - name: "Ensure Docker service is started and enabled"

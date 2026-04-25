@@ -12,7 +12,7 @@ pipeline {
         TF_VAR_pm_api_token_id     = credentials('Proxmox_user_token')
         TF_VAR_pm_api_token_secret = credentials('Proxmox_user_token2')
         TF_VAR_target_node         = "fanyla"
-        TF_VAR_ssh_public_key = credentials('SSH_key')
+        TF_VAR_ssh_public_key = credentials('sshpub')
         // Mematikan pengecekan SSH key agar Ansible tidak berhenti minta konfirmasi
         ANSIBLE_HOST_KEY_CHECKING = 'False'
 
@@ -43,18 +43,19 @@ pipeline {
         
         stage('Config - Ansible') {
             steps {
-                echo "Menunggu LXC benar-benar siap (60 detik)..."
-                sleep 60 
-                sh '''
-                    # 1. Hapus sidik jari lama IP 192.168.1.16 agar tidak bentrok (Man-in-the-middle protection)
-                    ssh-keygen -f "/root/.ssh/known_hosts" -R "192.168.1.16" || true
-                    
-                    # 2. Matikan pengecekan host key untuk sesi ini
-                    export ANSIBLE_HOST_KEY_CHECKING=False
-                    
-                    # 3. Masuk ke folder ansible dan jalankan playbook
-                    cd ansible && ansible-playbook -i inventory.ini playbook.yml
-                '''
+                echo "Menunggu LXC benar-benar siap..."
+                sleep 40 
+                
+                // MENGGUNAKAN SSH AGENT (Ganti 'SSH_PRIVATE_KEY_ID' dengan ID Credential SSH kamu)
+                // Credential ini harus bertipe "SSH Username with private key"
+                sshagent(['SSH_PRIVATE_KEY_ID']) {
+                    sh '''
+                        # Hapus jejak lama agar tidak error 'Host key verification failed'
+                        ssh-keygen -f "$HOME/.ssh/known_hosts" -R "192.168.1.16" || true
+                        
+                        cd ansible && ansible-playbook -i inventory.ini playbook.yml
+                    '''
+                }
             }
         }
 
