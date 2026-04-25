@@ -1,5 +1,16 @@
+# Terraform sensitif
 terraform/terraform.tfvars
 terraform/.terraform/
-terraform/terraform.tfstate*
-*.pem
-*.key
+terraform/*.tfstate
+terraform/*.tfstate.backup
+
+# Java / Backend build files
+backend/target/
+*.class
+
+# Folder IDE (opsional tapi bagus untuk dibersihkan)
+.vscode/
+.idea/
+
+# File log atau temp
+*.log
