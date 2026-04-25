@@ -14,6 +14,10 @@ resource "proxmox_lxc" "homelab_container" {
   cores  = 1
   memory = 512 # Dalam MB
 
+  features {
+    nesting = true
+    keyctl  = true
+  }
   rootfs {
     storage = "local-lvm"
     size    = "8G"
