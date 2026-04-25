@@ -48,7 +48,7 @@ pipeline {
                 
                 // MENGGUNAKAN SSH AGENT (Ganti 'SSH_PRIVATE_KEY_ID' dengan ID Credential SSH kamu)
                 // Credential ini harus bertipe "SSH Username with private key"
-                sshagent(['SSH_PRIVATE_KEY_ID']) {
+                sshagent(['sshpub']) {
                     sh '''
                         # Hapus jejak lama agar tidak error 'Host key verification failed'
                         ssh-keygen -f "$HOME/.ssh/known_hosts" -R "192.168.1.16" || true
@@ -59,14 +59,38 @@ pipeline {
             }
         }
 
+        stage('Config - Ansible') {
+                    steps {
+                        echo "Menunggu LXC siap..."
+                        sleep 40 
+                        
+                        // PENTING: Gunakan ID Credential "SSH Username with private key"
+                        // Jangan pakai 'sshpub' karena itu biasanya cuma teks public key
+                        sshagent(['SSH_Private_Key']) { 
+                            sh '''
+                                ssh-keygen -f "$HOME/.ssh/known_hosts" -R "192.168.1.16" || true
+                                cd ansible && ansible-playbook -i inventory.ini playbook.yml
+                            '''
+                        }
+                    }
+                }
+
         stage('Build & Deploy (Docker)') {
             steps {
-                echo 'Membangun Image & Menjalankan Container...'
-                // Menjalankan docker-compose untuk App (Backend + Frontend) & MongoDB
-                sh 'docker-compose up -d --build'
+                echo 'Menjalankan Container di LXC...'
+                sshagent(['SSH_Private_Key']) {
+                    // Kita tembak perintah docker-compose langsung ke IP LXC via SSH
+                    sh "ssh -o StrictHostKeyChecking=no root@192.168.1.16 'cd /path/ke/app && docker-compose up -d --build'"
+                }
             }
         }
-
+        stage('Verification') {
+            steps {
+                echo 'Verifikasi Aplikasi...'
+                // Jalankan test dari Jenkins ke IP LXC
+            }
+        }
+    }
         stage('Smoke Test') {
             steps {
                 echo 'Melakukan Verifikasi Aplikasi...'
@@ -97,4 +121,3 @@ pipeline {
 
     }
 
-}
