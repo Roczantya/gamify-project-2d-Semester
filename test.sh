@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Ambil IP dari argument pertama, kalau kosong pakai default
-TARGET_IP=${1:-"192.168.1.16"} 
+TARGET_IP=${1:-"192.168.1.20"} 
 PORT="8082"
 
 echo "---------------------------------------"

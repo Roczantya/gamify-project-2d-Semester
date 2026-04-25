@@ -1,5 +1,5 @@
 ---
-- name: "Provisioning Docker Environment on Proxmox LXC"
+- name: "Provisioning Docker Environment on Proxmox LXC (Anti-Permission-Error Version)"
   hosts: lxc_servers
   become: yes
   tasks:
@@ -9,6 +9,7 @@
         port: 22
         delay: 5
         timeout: 300
+
     - name: "Update apt repository cache"
       apt:
         update_cache: yes
@@ -22,16 +23,24 @@
           - curl
           - software-properties-common
           - python3-pip
+          - rsync  # Penting untuk pengiriman file yang stabil
         state: present
 
+    - name: Create directory for Docker key
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
     - name: Add Docker GPG key
-      apt_key:
+      get_url:
         url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
 
     - name: Add Docker repository
       apt_repository:
-        repo: "deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
         state: present
 
     - name: Install Docker packages
@@ -44,13 +53,23 @@
           - docker-compose-plugin
         state: present
         update_cache: yes
-    - name: "Ensure Docker service is started and enabled"
-      service:
+
+    # --- BAGIAN PALING PENTING (SOLUSI ERROR PERMISSION DENIED) ---
+    - name: "Configure Docker to use VFS storage driver (LXC Workaround)"
+      copy:
+        dest: "/etc/docker/daemon.json"
+        content: |
+          {
+            "storage-driver": "vfs"
+          }
+
+    - name: "Restart Docker service to apply changes"
+      systemctl:
         name: docker
-        state: started
+        state: restarted
         enabled: yes
 
-    - name: "Install Docker Compose Standalone"
+    - name: "Install Docker Compose Standalone (Optional for Legacy Support)"
       get_url:
         url: https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
         dest: /usr/local/bin/docker-compose

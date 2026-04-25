@@ -3,4 +3,3 @@ terraform/.terraform/
 terraform/terraform.tfstate*
 *.pem
 *.key
-test.sh

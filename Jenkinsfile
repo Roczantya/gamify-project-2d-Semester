@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // 1. PUSAT KONTROL IP (Ganti di sini aja kalau mau pindah alamat)
-        LXC_IP                     = "192.168.1.16"
+        LXC_IP                     = "192.168.1.20"
         
         TF_VAR_pm_api_url          = "https://100.121.8.48:8006/api2/json"
         TF_VAR_pm_api_token_id     = credentials('Proxmox_user_token')
@@ -51,6 +51,13 @@ pipeline {
 
         stage('Deploy - Docker') {
             steps {
+                echo "Ngetes apakah target hidup..."
+                // Cek apakah IP bisa diping
+                sh "ping -c 5 192.168.1.20 || echo 'TARGET MATI!'"
+                
+                // Cek apakah Port 22 terbuka
+                sh "nc -zv 192.168.1.20 22 || echo 'PORT 22 TUTUP!'"
+
                 echo 'Mengirim kode & Menjalankan Docker...'
                 sshagent(["${env.SSH_KEY_ID}"]) {
                     sh """
