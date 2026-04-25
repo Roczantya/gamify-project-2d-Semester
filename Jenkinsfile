@@ -53,10 +53,10 @@ pipeline {
             steps {
                 echo "Ngetes apakah target hidup..."
                 // Cek apakah IP bisa diping
-                sh "ping -c 5 192.168.1.20 || echo 'TARGET MATI!'"
-                
-                // Cek apakah Port 22 terbuka
-                sh "nc -zv 192.168.1.20 22 || echo 'PORT 22 TUTUP!'"
+                echo "Verifikasi koneksi ke ${env.LXC_IP}..."
+                // Menggunakan variabel ${env.LXC_IP} agar otomatis berubah
+                sh "ping -c 3 ${env.LXC_IP} || echo 'TARGET MATI!'"
+                sh "nc -zv ${env.LXC_IP} 22 || echo 'PORT 22 TUTUP!'"
 
                 echo 'Mengirim kode & Menjalankan Docker...'
                 sshagent(["${env.SSH_KEY_ID}"]) {
