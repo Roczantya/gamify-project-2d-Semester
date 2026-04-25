@@ -2,23 +2,20 @@ pipeline {
     agent any
 
     environment {
-
-        /* BAGIAN KEAMANAN (5 STARS):
-           Menyambungkan Jenkins Credentials ke Terraform Variables.
-           Nama di dalam credentials('...') harus sama dengan ID yang kamu buat di Jenkins UI.
-
-        */
-        TF_VAR_pm_api_url          = "https://100.121.8.48:8006/api2/json" // Ganti dengan IP Proxmox-mu
+        // --- CREDENTIALS ---
+        TF_VAR_pm_api_url          = "https://100.121.8.48:8006/api2/json"
         TF_VAR_pm_api_token_id     = credentials('Proxmox_user_token')
         TF_VAR_pm_api_token_secret = credentials('Proxmox_user_token2')
         TF_VAR_target_node         = "fanyla"
-        TF_VAR_ssh_public_key = credentials('sshpub')
-        // Mematikan pengecekan SSH key agar Ansible tidak berhenti minta konfirmasi
-        ANSIBLE_HOST_KEY_CHECKING = 'False'
-
+        
+        // Gembok untuk Terraform (Secret Text)
+        TF_VAR_ssh_public_key      = credentials('sshpub')
+        
+        // ID Kunci Private untuk Ansible & SSH (SSH Username with private key)
+        SSH_KEY_ID                 = 'SSH_Private_Key' // Ganti dengan ID kredensial SSH kamu di Jenkin
+        
+        ANSIBLE_HOST_KEY_CHECKING  = 'False'
     }
-
-
 
     stages {
         stage('Checkout SCM') {
@@ -28,14 +25,11 @@ pipeline {
             }
         }
 
-
-
-        stage('Infrastructure (Terraform)') {
+        stage('Infrastructure - Terraform') {
             steps {
                 dir('terraform') {
                     echo 'Memulai Provisioning LXC di Proxmox...'
                     sh 'terraform init'
-                    // Terraform otomatis membaca variabel TF_VAR_ di atas
                     sh 'terraform apply -auto-approve'
                 }
             }
@@ -43,64 +37,37 @@ pipeline {
         
         stage('Config - Ansible') {
             steps {
-                echo "Menunggu LXC benar-benar siap..."
+                echo "Menunggu LXC siap (40 detik)..."
                 sleep 40 
-                
-                // MENGGUNAKAN SSH AGENT (Ganti 'SSH_PRIVATE_KEY_ID' dengan ID Credential SSH kamu)
-                // Credential ini harus bertipe "SSH Username with private key"
-                sshagent(['sshpub']) {
+                sshagent(["${env.SSH_KEY_ID}"]) {
                     sh '''
-                        # Hapus jejak lama agar tidak error 'Host key verification failed'
                         ssh-keygen -f "$HOME/.ssh/known_hosts" -R "192.168.1.16" || true
-                        
                         cd ansible && ansible-playbook -i inventory.ini playbook.yml
                     '''
                 }
             }
         }
 
-        stage('Config - Ansible') {
-                    steps {
-                        echo "Menunggu LXC siap..."
-                        sleep 40 
-                        
-                        // PENTING: Gunakan ID Credential "SSH Username with private key"
-                        // Jangan pakai 'sshpub' karena itu biasanya cuma teks public key
-                        sshagent(['SSH_Private_Key']) { 
-                            sh '''
-                                ssh-keygen -f "$HOME/.ssh/known_hosts" -R "192.168.1.16" || true
-                                cd ansible && ansible-playbook -i inventory.ini playbook.yml
-                            '''
-                        }
-                    }
+        stage('Deploy - Docker') {
+            steps {
+                echo 'Membangun & Menjalankan Container di LXC...'
+                sshagent(["${env.SSH_KEY_ID}"]) {
+                    // Masuk ke direktori tempat docker-compose.yml berada di LXC
+                    // Sesuaikan path '/root/app' dengan lokasi file kamu di LXC
+                    sh "ssh -o StrictHostKeyChecking=no root@192.168.1.16 'cd /root/app && docker-compose up -d --build'"
                 }
+            }
+        }
 
-        stage('Build & Deploy (Docker)') {
-            steps {
-                echo 'Menjalankan Container di LXC...'
-                sshagent(['SSH_Private_Key']) {
-                    // Kita tembak perintah docker-compose langsung ke IP LXC via SSH
-                    sh "ssh -o StrictHostKeyChecking=no root@192.168.1.16 'cd /path/ke/app && docker-compose up -d --build'"
-                }
-            }
-        }
-        stage('Verification') {
-            steps {
-                echo 'Verifikasi Aplikasi...'
-                // Jalankan test dari Jenkins ke IP LXC
-            }
-        }
-    }
         stage('Smoke Test') {
             steps {
-                echo 'Melakukan Verifikasi Aplikasi...'
-                // Menjalankan script test.sh untuk memastikan aplikasi tidak crash
-                sh 'bash test.sh'
+                echo 'Melakukan Verifikasi Aplikasi dengan test.sh...'
+                // Jika test.sh ada di repo GitHub (di root folder)
+                // Dan script tersebut akan mengetes IP 192.168.1.16
+                sh 'bash test.sh' 
             }
         }
-    }
-
-
+    } // Akhir blok STAGES
 
     post {
         success {
@@ -108,16 +75,13 @@ pipeline {
             echo 'HORE! PIPELINE BERHASIL & APLIKASI JALAN!'
             echo '============================================='
         }
-
         failure {
             echo '============================================='
-            echo 'WADUH GAGAL! Melakukan Auto-Destroy agar Proxmox tetap bersih...'
+            echo 'WADUH GAGAL! Menghancurkan LXC agar bersih...'
             echo '============================================='
             dir('terraform') {
-                // FITUR KEAMANAN: Hancurkan LXC kalau gagal biar nggak nyampah
                 sh 'terraform destroy -auto-approve'
             }
         }
-
     }
-
+}
