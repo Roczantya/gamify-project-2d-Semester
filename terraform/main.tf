@@ -16,7 +16,7 @@ resource "proxmox_lxc" "homelab_container" {
 
   features {
     nesting = true
-    keyctl  = true
+    #keyctl  = true
   }
   rootfs {
     storage = "local-lvm"
