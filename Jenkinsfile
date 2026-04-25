@@ -38,7 +38,7 @@ pipeline {
         stage('Config - Ansible') {
             steps {
                 echo "Menunggu LXC siap (40 detik)..."
-                sleep 40 
+                sleep 65
                 sshagent(["${env.SSH_KEY_ID}"]) {
                     sh '''
                         ssh-keygen -f "$HOME/.ssh/known_hosts" -R "192.168.1.16" || true
