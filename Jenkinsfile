@@ -50,11 +50,19 @@ pipeline {
 
         stage('Deploy - Docker') {
             steps {
-                echo 'Membangun & Menjalankan Container di LXC...'
+                echo 'Mengirim kode & Menjalankan Docker...'
                 sshagent(["${env.SSH_KEY_ID}"]) {
-                    // Masuk ke direktori tempat docker-compose.yml berada di LXC
-                    // Sesuaikan path '/root/app' dengan lokasi file kamu di LXC
-                    sh "ssh -o StrictHostKeyChecking=no root@192.168.1.16 'cd /root/app && docker-compose up -d --build'"
+                    sh '''
+                        # 1. Buat folder di target
+                        ssh -o StrictHostKeyChecking=no root@192.168.1.16 "mkdir -p /root/app"
+                        
+                        # 2. Kirim semua isi folder saat ini ke target
+                        # Kita pakai -r (recursive) dan pastikan path-nya benar
+                        scp -o StrictHostKeyChecking=no -r ./* root@192.168.1.16:/root/app/
+                        
+                        # 3. Baru jalankan docker-compose
+                        ssh -o StrictHostKeyChecking=no root@192.168.1.16 "cd /root/app && docker-compose up -d --build"
+                    '''
                 }
             }
         }
